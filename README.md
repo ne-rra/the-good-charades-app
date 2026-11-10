@@ -4,13 +4,13 @@
 
 A personal project by **Rafan Sadad Rahman**.
 
-![Platform](https://img.shields.io/badge/platform-Android-brightgreen) ![Version](https://img.shields.io/badge/version-1.3.0-orange) ![License](https://img.shields.io/badge/license-MIT-blue) ![Ads](https://img.shields.io/badge/ads-none-red) ![Paywall](https://img.shields.io/badge/paywall-none-red)
+![Platform](https://img.shields.io/badge/platform-Android-brightgreen) ![Version](https://img.shields.io/badge/version-1.4.0-orange) ![License](https://img.shields.io/badge/license-MIT-blue) ![Ads](https://img.shields.io/badge/ads-none-red) ![Paywall](https://img.shields.io/badge/paywall-none-red)
 
 ---
 
 ## 📱 Download & install
 
-1. Go to the [**Releases**](https://github.com/ne-rra/the-good-charades-app/releases) page and download `TheGoodCharades-v1.3.0.apk`.
+1. Go to the [**Releases**](https://github.com/ne-rra/the-good-charades-app/releases) page and download `TheGoodCharades-v1.4.0.apk`.
 2. Open the APK on your Android phone.
 3. If Android asks, allow **“Install unknown apps”** for your browser/files app (this app isn't on the Play Store — it installs directly).
 4. Tap **Install**, open **The Good Charades App**, pick a deck, and play.
@@ -33,7 +33,7 @@ One player holds the phone against their forehead, screen facing their friends. 
 
 Full rules: [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)
 
-## 🗂️ The decks — 19 decks · 696 words
+## 🗂️ The decks — 19 decks · 698 words
 
 | Deck | Deck | Deck |
 |---|---|---|
@@ -41,7 +41,7 @@ Full rules: [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)
 | 🎬 Movies & TV | ⭐ Famous People | 🌍 Around the World |
 | ⚽ Sports & Games | 💼 Jobs & People | 🏠 Everyday Objects |
 | 🎵 Music | 🔬 Science & Nature | 🧠 Brain Melters (hard mode) |
-| 🦖 Godzilla & Kaiju | 👻 Horror Legends | 🌸 Anime & Animation |
+| 🦖 Kaiju & Giant Monsters | 👻 Horror Legends | 🌸 Anime & Animation |
 | 🦸 Superheroes & Villains | 🐉 Fantasy Books & Worlds | 🇧🇩 Bangladesh & Desi Culture |
 | ⚙️ Engineering & Campus Life | ✏️ **+ build your own deck** in the app | 🔀 Mixed Bag (all decks shuffled) |
 
@@ -50,29 +50,30 @@ Full rules: [docs/HOW_TO_PLAY.md](docs/HOW_TO_PLAY.md)
 - 🚫 **Zero ads, zero paywall, zero sign-up** — every deck unlocked from the start
 - 📐 **Native tilt controls** with return-to-neutral debouncing, plus big on-screen buttons as backup
 - ⏱️ Adjustable round timers, streak counter, sound effects & vibration
-- 🌗 Polished UI that adapts to light/dark mode, huge forehead-readable words
+- 🌑 Refined charcoal-and-cream dark UI with huge forehead-readable words
+- 👥 **Team match mode** — two teams, alternating rounds, best total after two rounds each wins
+- 🔥 **Streak bonuses** — every 5 correct in a row adds +3 seconds
+- ⭐ Per-deck best scores, a 🎲 Surprise-me random deck, and settings that remember themselves
+- 🔤 Fonts are bundled in the app — it works fully offline, no network calls at all
 - ✏️ **Custom deck builder** — your own words for inside jokes
 - 🔀 Shuffled rounds with **no repeats** in a round
 
 ## 🛠️ Build from source
 
-```bash
-git clone https://github.com/ne-rra/the-good-charades-app.git
-cd the-good-charades-app
-./gradlew assembleDebug
-# APK lands in app/build/outputs/apk/debug/
-```
-
-Requirements: **JDK 17** and the **Android SDK (API 34)** — or just open the project in Android Studio and hit Run.
+Clone the repo and open it in **Android Studio** (JDK 17, Android SDK API 34), then Run — or grab the ready-made APK from [Releases](https://github.com/ne-rra/the-good-charades-app/releases). The Gradle wrapper is not committed yet (see ROADMAP.md), so there is no `./gradlew` in a fresh clone.
 
 How it works under the hood: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ## 🗺️ Roadmap
 
+- [x] Team-vs-team match mode (v1.3.0)
+- [x] Streak bonuses, Surprise-me deck, per-deck best scores (v1.3.0)
+- [x] Fully offline — fonts bundled, no network calls (v1.4.0)
 - [ ] Sound-effect pack v2
-- [ ] Team-vs-team score mode
 - [ ] More decks (suggest one in Issues!)
 - [ ] Play Store release
+
+Full roadmap: [ROADMAP.md](ROADMAP.md)
 
 ## 👤 Author
 
