@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.0] - 2026-11-10
+The QA release — an automated audit (400,000+ simulated checks: full matches, adversarial play, fuzzed inputs, corrupted saves) drove this one.
+### Fixed
+- **Match fairness**: a tied match no longer ends on Team One's extra round — both teams get equal tiebreak rounds; quitting a round early no longer counts it or banks its score; rounds played after a match ended no longer vanish silently.
+- **Countdown & pause**: double-tapping Start can't wipe a round in progress; the countdown can be cancelled and no longer burns a round while the app is hidden; the pause menu no longer sticks into the next round, and pausing freezes the word advance.
+- **Tilt**: the in-app Tilt OFF switch now actually disables native tilt; the bridge reads live settings instead of a label; slow nods register (baseline no longer absorbs them), diagonal holds measure correctly, first-sample and reposition phantoms are handled; devices without an accelerometer fall back to the web sensor.
+- **Saved data**: corrupted or mistyped best-score/match data can no longer crash or brick the app; "New best" is only claimed when the save actually persisted.
+- **Words**: Mixed Bag no longer deals duplicates (cross-deck de-dupe); fixed duplicated/mislabelled entries — Around the World and Brain Melters are back to a full 36 unique words each; Kaiju deck de-aliased (Ebirah, Varan, Orga, Gabara and Manda join); 698 words total.
+- **Polish**: timer bar can no longer overflow past 100%; streak bonus capped at the round length; gold buttons and muted text meet contrast minimums; color-mix fallbacks for older WebViews; aria-live announcements for the word and countdown; Android Back now pauses/goes home sensibly; backup of app data disabled.
+### Added
+- Settings, team-match state and your custom deck now **persist** between launches — a match in progress can be resumed.
+- **Replay missed words** round from the results screen.
+- Live match standings banner on the home screen.
+- Fonts are bundled in the app: fully offline, zero network calls.
+
 ## [1.3.0] - 2026-11-10
 ### Added
 - **Team match mode**: two teams take turns; the best total after two rounds each wins the match, with a live match score on the results screen and a winner celebration.
