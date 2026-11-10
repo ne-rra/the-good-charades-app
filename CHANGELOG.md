@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.0] - 2026-11-10
+### Added
+- **Team match mode**: two teams take turns; the best total after two rounds each wins the match, with a live match score on the results screen and a winner celebration.
+- **Streak bonus**: every 5 correct answers in a row adds +3 seconds to the clock, with a floating bonus callout.
+- **Surprise me** button: jump straight into a random deck.
+- Results score now counts up, and the ready screen shows whose turn it is in a match.
+### Changed
+- Visual polish in the same quiet palette: gently floating logo, deck-colored card spines and rings, a gold streak pill, smoother word flip-in, and finer panel detailing.
+
 ## [1.2.1] - 2026-11-10
 ### Changed
 - Footer tidy-up: the in-app legal note is gone; the footer now simply credits the author.

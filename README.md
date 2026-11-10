@@ -4,13 +4,13 @@
 
 A personal project by **Rafan Sadad Rahman**.
 
-![Platform](https://img.shields.io/badge/platform-Android-brightgreen) ![Version](https://img.shields.io/badge/version-1.2.1-orange) ![License](https://img.shields.io/badge/license-MIT-blue) ![Ads](https://img.shields.io/badge/ads-none-red) ![Paywall](https://img.shields.io/badge/paywall-none-red)
+![Platform](https://img.shields.io/badge/platform-Android-brightgreen) ![Version](https://img.shields.io/badge/version-1.3.0-orange) ![License](https://img.shields.io/badge/license-MIT-blue) ![Ads](https://img.shields.io/badge/ads-none-red) ![Paywall](https://img.shields.io/badge/paywall-none-red)
 
 ---
 
 ## 📱 Download & install
 
-1. Go to the [**Releases**](https://github.com/ne-rra/the-good-charades-app/releases) page and download `TheGoodCharades-v1.2.1.apk`.
+1. Go to the [**Releases**](https://github.com/ne-rra/the-good-charades-app/releases) page and download `TheGoodCharades-v1.3.0.apk`.
 2. Open the APK on your Android phone.
 3. If Android asks, allow **“Install unknown apps”** for your browser/files app (this app isn't on the Play Store — it installs directly).
 4. Tap **Install**, open **The Good Charades App**, pick a deck, and play.
