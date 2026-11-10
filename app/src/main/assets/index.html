@@ -221,6 +221,24 @@
   .paused-card{background:#1E1D23}
   .score-num{background:none;-webkit-background-clip:initial;background-clip:initial;color:var(--ink);filter:none}
   .toast{background:#F2EDE3;color:#1C1A17}
+
+  /* ===== POLISH (v1.3.0) ===== */
+  .hero-logo{animation:floaty 5.5s ease-in-out infinite}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-1.2deg)}50%{transform:translateY(-7px) rotate(1.2deg)}}
+  .cat{border-left:4px solid var(--ac,#AE7C3A)}
+  .cat .em{outline:1px solid color-mix(in srgb,var(--ac,#AE7C3A) 55%,transparent);outline-offset:-1px}
+  .cat{transition:transform .14s,box-shadow .2s}
+  .cat:hover{box-shadow:0 16px 32px rgba(0,0,0,.5)}
+  .streak{background:rgba(0,0,0,.38);padding:7px 14px;border-radius:999px;border:1px solid rgba(227,185,89,.45)}
+  #gBonus{position:absolute;top:15%;left:50%;transform:translateX(-50%);font-family:'Archivo Black',sans-serif;font-size:clamp(1.6rem,6vmin,2.6rem);color:var(--yellow);opacity:0;pointer-events:none;text-shadow:0 6px 22px rgba(0,0,0,.5)}
+  #gBonus.show{animation:bonusUp 1.05s ease-out forwards}
+  @keyframes bonusUp{0%{opacity:0;transform:translateX(-50%) translateY(14px) scale(.8)}18%{opacity:1;transform:translateX(-50%) translateY(0) scale(1.08)}30%{transform:translateX(-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translateX(-50%) translateY(-30px)}}
+  .steps{border-left:3px solid var(--gold)}
+  .stat b{color:#EFE6CF}
+  .g-word.pop{animation:pop2 .32s cubic-bezier(.2,.9,.3,1.3)}
+  @keyframes pop2{0%{transform:scale(.82) rotateX(14deg);opacity:.2}60%{transform:scale(1.06) rotateX(0)}100%{transform:scale(1)}}
+  .score-num{text-shadow:0 10px 34px rgba(196,148,58,.18)}
+  .panel h3{letter-spacing:.02em}
 </style>
 </head>
 <body>
@@ -245,6 +263,7 @@
   <div class="toolbar">
     <div class="search"><i>🔍</i><input id="searchInput" type="search" placeholder="Search decks — try “food”, “movies”, “animals”…" aria-label="Search categories"></div>
     <button class="btn ghost" id="btnHow">❓ How to play</button>
+    <button class="btn ghost" id="btnRandom">🎲 Surprise me</button>
     <button class="btn ghost" id="btnCustom">✏️ My own deck</button>
   </div>
 
@@ -277,6 +296,7 @@
       <p class="sub">Tilt needs motion permission on some phones — tap the button once and allow it.</p>
       <div class="switchrow"><label for="optSound">🔊 Sound effects<small>Dings, buzzes &amp; the final countdown beeps</small></label><input type="checkbox" id="optSound" checked></div>
       <div class="switchrow"><label for="optVibrate">📳 Vibration<small>A buzz on correct, pass &amp; time-up</small></label><input type="checkbox" id="optVibrate" checked></div>
+      <div class="switchrow"><label for="optTeams">👥 Team match<small>Two teams take turns · best total after 2 rounds each wins</small></label><input type="checkbox" id="optTeams"></div>
       <div class="switchrow"><label for="optTilt">📐 Tilt controls<small>Turn off to play with buttons only</small></label><input type="checkbox" id="optTilt" checked></div>
       <div class="stack" style="justify-content:flex-start">
         <button class="btn coral" id="btnTiltPerm">Enable tilt sensor</button>
@@ -338,6 +358,7 @@
   </div>
   <div class="g-mid" id="gMid">
     <div class="streak" id="gStreak"></div>
+    <div id="gBonus">+3s</div>
     <div class="g-cat" id="gCat">Category</div>
     <div class="g-word disp" id="gWord">WORD</div>
     <div class="g-hint" id="gHint">Tilt down = got it · Tilt up = pass</div>
@@ -369,6 +390,7 @@
     <span class="pill" id="resDeck">Deck</span>
     <div class="score-num disp" id="resScore">0</div>
     <p id="resVerdict" style="font-weight:700;font-size:1.15rem;margin:4px 0 0"></p>
+    <p id="resMatch" style="font-weight:800;color:var(--yellow);font-size:1.05rem;margin:10px 0 0;min-height:1.2em"></p>
   </div>
   <div class="stats">
     <div class="stat"><b id="stCorrect">0</b><span>Correct</span></div>
@@ -422,7 +444,7 @@ CATS.forEach(function(c){var seen={},out=[];c.words.forEach(function(w){var k=w.
 var S = {
   seconds:60, tiltMode:"classic", sound:true, vibrate:true, tiltOn:true,
   deck:null, pool:[], idx:0, correct:[], passed:[], streak:0, best:0,
-  timeLeft:0, timer:null, playing:false, locked:false, paused:false,
+  timeLeft:0, timer:null, playing:false, locked:false, paused:false, teams:false,
   tiltArmed:true, baseBeta:null, orientHandler:null, customDeck:null
 };
 function $(id){return document.getElementById(id);}
@@ -483,11 +505,20 @@ function renderGrid(filter){
 function allWords(){var a=[];CATS.forEach(function(c){a=a.concat(c.words);});if(S.customDeck)a=a.concat(S.customDeck.words);return a;}
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
+/* ================= TEAM MATCH ================= */
+var MATCH=null;
+try{MATCH=JSON.parse(localStorage.getItem("gca_match")||"null");}catch(e){MATCH=null;}
+if(!MATCH||!MATCH.totals)MATCH={turn:0,played:[0,0],totals:[0,0],over:false};
+function saveMatch(){try{localStorage.setItem("gca_match",JSON.stringify(MATCH));}catch(e){}}
+function teamName(i){return i===0?"Team One":"Team Two";}
+function resetMatch(){MATCH={turn:0,played:[0,0],totals:[0,0],over:false};saveMatch();}
+function bonusFlash(){var b=$("gBonus");if(!b)return;b.classList.remove("show");void b.offsetWidth;b.classList.add("show");}
+
 /* ================= SETUP ================= */
 function tiltText(){return S.tiltMode==="classic" ? "Tilt DOWN = correct ✓ · Tilt UP = pass ✕ (or use the buttons)" : "Tilt UP = correct ✓ · Tilt DOWN = pass ✕ (or use the buttons)";}
 function startSetup(deck){
   S.deck=deck;
-  $("readyDeck").textContent=deck.em+"  "+deck.name+"  ·  "+deck.words.length+" words  ·  "+S.seconds+" seconds";
+  $("readyDeck").textContent=(S.teams&&!MATCH.over?("👥 "+teamName(MATCH.turn)+"\u2019s turn  ·  "):"")+deck.em+"  "+deck.name+"  ·  "+deck.words.length+" words  ·  "+S.seconds+" seconds";
   $("readyTiltText").textContent=tiltText();
   show("screen-ready");
 }
@@ -567,7 +598,7 @@ function answer(ok){
   if(!S.playing||S.paused||S.locked)return;
   S.locked=true;
   var w=currentWord();
-  if(ok){S.correct.push(w);S.streak++;S.best=Math.max(S.best,S.streak);snd.correct();vib(45);}
+  if(ok){S.correct.push(w);S.streak++;S.best=Math.max(S.best,S.streak);snd.correct();vib(45);if(S.streak%5===0){S.timeLeft+=3;bonusFlash();}}
   else{S.passed.push(w);S.streak=0;snd.pass();vib([30,40,30]);}
   flash(ok); S.idx++; updateHUD();
   setTimeout(function(){if(S.playing){showWord();}S.locked=false;},430);
@@ -578,7 +609,20 @@ function endRound(){
   /* results */
   var c=S.correct.length,p=S.passed.length,tot=c+p;
   $("resDeck").textContent=S.deck.em+" "+S.deck.name;
-  $("resScore").textContent=c;
+  (function(){var el=$("resScore"),v=0,step=Math.max(1,Math.round(c/18));el.textContent="0";if(c===0)return;var iv=setInterval(function(){v+=step;if(v>=c){v=c;clearInterval(iv);}el.textContent=v;},34);})();
+  var matchMsg="";
+  if(S.teams){
+    if(!MATCH.over){var tn=MATCH.turn;MATCH.played[tn]++;MATCH.totals[tn]+=c;
+      if(MATCH.played[0]>=2&&MATCH.played[1]>=2&&MATCH.totals[0]!==MATCH.totals[1]){MATCH.over=true;}
+      else{MATCH.turn=1-MATCH.turn;}
+      saveMatch();}
+    if(MATCH.over){var wn=MATCH.totals[0]>MATCH.totals[1]?0:1;matchMsg="🏆 "+teamName(wn)+" wins the match, "+Math.max(MATCH.totals[0],MATCH.totals[1])+" — "+Math.min(MATCH.totals[0],MATCH.totals[1])+"!";}
+    else{matchMsg="Match score — Team One "+MATCH.totals[0]+" · Team Two "+MATCH.totals[1]+"  ·  "+teamName(MATCH.turn)+" plays next";}
+  }
+  $("resMatch").textContent=matchMsg;
+  $("btnAgain").style.display=S.teams?"none":"";
+  $("btnNextPlayer").innerHTML=MATCH.over?"🏆 Start a new match":(S.teams?"👥 Pass to "+teamName(MATCH.turn):"👥 Pass to next player");
+  if(S.teams&&MATCH.over)setTimeout(function(){burst(60);},250);
   $("resVerdict").textContent = c===0?"Tough deck! Shake it off and go again 💪" : c<5?"Nice warm-up! You're getting the hang of it 🎉" : c<10?"Great round — your team was ON it 🔥" : c<15?"Superstar guessing! Absolutely flying ⭐" : "LEGENDARY. Hall-of-fame round 🏆";
   var isNewBest=saveBest(S.deck&&S.deck.id,c); if(isNewBest&&c>0)$("resVerdict").textContent+=" \u2605 New best for this deck!";
   $("stCorrect").textContent=c; $("stPass").textContent=p;
@@ -661,6 +705,7 @@ $("tiltChips").addEventListener("click",function(e){
 });
 $("optSound").onchange=function(){S.sound=this.checked;if(this.checked)snd.correct();};
 $("optVibrate").onchange=function(){S.vibrate=this.checked;if(this.checked)vib(40);};
+$("optTeams").onchange=function(){S.teams=this.checked;if(this.checked)resetMatch();toast(this.checked?"👥 Team match on — Team One starts!":"Team match off");};
 $("optTilt").onchange=function(){S.tiltOn=this.checked;$("tiltStatus").textContent=this.checked?"On — will listen during rounds":"Off — buttons only";};
 $("btnTiltPerm").onclick=requestTilt;
 $("btnBackHome").onclick=function(){show("screen-home");};
@@ -673,7 +718,8 @@ $("btnResume").onclick=function(){pauseGame(false);};
 $("btnQuit").onclick=function(){endRound();};
 $("btnEndFromPause").onclick=function(){$("pauseVeil").classList.remove("show");S.paused=false;endRound();};
 $("btnAgain").onclick=function(){startSetup(S.deck);startCountdown();};
-$("btnNextPlayer").onclick=function(){startSetup(S.deck);};
+$("btnRandom").onclick=function(){var d=CATS[Math.floor(Math.random()*CATS.length)];startSetup(d);};
+$("btnNextPlayer").onclick=function(){if(S.teams&&MATCH.over)resetMatch();startSetup(S.deck);};
 $("btnHome2").onclick=function(){show("screen-home");};
 document.addEventListener("keydown",function(e){
   if(!$("screen-game").classList.contains("active"))return;
