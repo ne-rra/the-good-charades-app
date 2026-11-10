@@ -6,10 +6,10 @@
 <meta name="color-scheme" content="dark" />
 <link rel="icon" href="data:," />
 <title>The Good Charades App</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
 <style>
+  @font-face{font-family:'Archivo Black';src:url('fonts/archivo-black.woff2') format('woff2');font-weight:400;font-display:swap}
+  @font-face{font-family:'Outfit';src:url('fonts/outfit-var.woff2') format('woff2');font-weight:100 900;font-display:swap}
   :root{
     --bg0:#150C2E; --bg1:#2A1152; --card:rgba(255,255,255,.07); --card2:rgba(255,255,255,.12);
     --brd:rgba(255,255,255,.16); --ink:#FBF8FF; --muted:#C9BCE9;
@@ -239,6 +239,25 @@
   @keyframes pop2{0%{transform:scale(.82) rotateX(14deg);opacity:.2}60%{transform:scale(1.06) rotateX(0)}100%{transform:scale(1)}}
   .score-num{text-shadow:0 10px 34px rgba(196,148,58,.18)}
   .panel h3{letter-spacing:.02em}
+
+  /* ===== v1.4.0 FIXES (swarm audit) ===== */
+  :root{--green:#5F9E77;--red:#D4705F}
+  .btn.coral{background:#86621F}
+  input::placeholder,textarea::placeholder{color:#8A8175;opacity:1}
+  #tFill{transition:width 1s linear}
+  .wrap{padding-bottom:calc(26px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(18px + env(safe-area-inset-bottom))}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  @supports not (background: color-mix(in srgb, red 50%, blue)){
+    .cat{background:#17161A}
+    .cat .em{background:#1D1C21}
+    #screen-game{background:#141317}
+    .hero h1 span{-webkit-text-fill-color:#E3B959}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .hero-logo{animation:none}
+    html{scroll-behavior:auto}
+  }
 </style>
 </head>
 <body>
@@ -250,14 +269,21 @@
     <span class="pill">No ads · No paywall · Just play</span>
     <img class="hero-logo" src="logo.png" alt="The Good Charades App logo">
     <h1 class="disp">The Good<br><span>Charades</span></h1>
-    <p>Hold the phone to your forehead. Your friends shout clues — you guess. Tilt or tap to score. <strong id="totalWords">696</strong> words across every deck below, all unlocked.</p>
+    <p>Hold the phone to your forehead. Your friends shout clues — you guess. Tilt or tap to score. <strong id="totalWords">698</strong> words across every deck below, all unlocked.</p>
   </div>
 
   <div class="howbar">
     <div class="how">📱 <span><b>1.</b> Pick a deck</span></div>
     <div class="how">🙆 <span><b>2.</b> Phone on forehead</span></div>
-    <div class="how">⬇️ <span><b>Tilt down</b> = Got it</span></div>
-    <div class="how">⬆️ <span><b>Tilt up</b> = Pass</span></div>
+    <div class="how">⬇️ <span id="howTiltDown"><b>Tilt down</b> = Got it</span></div>
+    <div class="how">⬆️ <span id="howTiltUp"><b>Tilt up</b> = Pass</span></div>
+  </div>
+
+  <div class="panel" id="matchBar" style="display:none;margin:16px 0 2px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <span id="matchBarTxt" style="font-weight:700"></span>
+      <button class="btn ghost" id="btnNewMatch" style="padding:8px 14px">↺ New match</button>
+    </div>
   </div>
 
   <div class="toolbar">
@@ -308,8 +334,8 @@
   <div class="panel" id="customPanel" hidden>
     <h3>✏️ Build your own deck</h3>
     <p class="sub">Perfect for inside jokes, family names, your class, your team — anything. Give it a name, then type one word or phrase per line (at least 5). It stays on this device for this session only.</p>
-    <input class="field" id="customName" placeholder="Deck name — e.g. “Family Inside Jokes”" maxlength="40">
-    <textarea id="customWords" placeholder="One per line, e.g.&#10;Grandma's cooking&#10;The broken trampoline&#10;Uncle's karaoke night"></textarea>
+    <input class="field" id="customName" placeholder="Deck name — e.g. “Family Inside Jokes”" maxlength="40" aria-label="Custom deck name">
+    <textarea id="customWords" aria-label="Custom deck words, one per line" placeholder="One per line, e.g.&#10;Grandma's cooking&#10;The broken trampoline&#10;Uncle's karaoke night"></textarea>
     <div class="stack" style="justify-content:flex-start">
       <button class="btn coral" id="btnSaveCustom">Save &amp; play this deck</button>
       <button class="btn ghost" id="btnCancelCustom">Cancel</button>
@@ -338,10 +364,11 @@
 
 <!-- ============ COUNTDOWN ============ -->
 <section id="screen-count" class="screen">
-  <div class="center" style="padding-top:10vh">
+  <div class="center">
     <p style="font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Phone on your forehead…</p>
-    <div class="countnum disp" id="countNum">3</div>
+    <div class="countnum disp" id="countNum" aria-live="polite">3</div>
     <p id="countWord" style="font-weight:700;font-size:1.1rem">Get ready…</p>
+    <button class="btn ghost" id="btnCancelCount" style="margin-top:26px">✕ Cancel</button>
   </div>
 </section>
 </main>
@@ -360,7 +387,7 @@
     <div class="streak" id="gStreak"></div>
     <div id="gBonus">+3s</div>
     <div class="g-cat" id="gCat">Category</div>
-    <div class="g-word disp" id="gWord">WORD</div>
+    <div class="g-word disp" id="gWord" aria-live="polite">WORD</div>
     <div class="g-hint" id="gHint">Tilt down = got it · Tilt up = pass</div>
   </div>
   <div class="g-actions">
@@ -372,7 +399,7 @@
 <div id="flash"><span id="flashTxt">✓</span></div>
 <div id="confetti"></div>
 
-<div class="paused-veil" id="pauseVeil">
+<div class="paused-veil" id="pauseVeil" role="dialog" aria-label="Game paused">
   <div class="paused-card">
     <h2 class="disp" style="margin:0 0 8px">PAUSED</h2>
     <p style="color:var(--muted);margin:0 0 18px">Timer's frozen. No peeking! 👀</p>
@@ -404,6 +431,7 @@
   </div>
   <div class="stack">
     <button class="btn coral" id="btnAgain" style="font-size:1.05rem;padding:15px 28px">↻ Play again</button>
+    <button class="btn" id="btnReview" style="display:none">🎯 Replay missed words</button>
     <button class="btn" id="btnNextPlayer">👥 Pass to next player</button>
     <button class="btn ghost" id="btnHome2">All decks</button>
   </div>
@@ -411,7 +439,7 @@
 </main>
 
 <footer>Play in landscape for the full forehead experience · Tilt, tap, or use ↑ / ↓ keys · Everything runs right here — no account, no ads, nothing locked.<br><span style="opacity:.8">Made by Rafan Sadad Rahman · Free forever</span></footer>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 "use strict";
@@ -420,19 +448,19 @@ var CATS = [
  {id:"animals", em:"🦁", name:"Animals", desc:"From backyard pets to deep-sea weirdos — act them, sound them, guess them.", ac:"#AE7C3A", diff:"Easy", words:["Elephant","Penguin","Giraffe","Octopus","Kangaroo","Panda","Flamingo","Cheetah","Owl","Shark","Butterfly","Gorilla","Polar Bear","Chameleon","Hedgehog","Sloth","Peacock","Wolf","Dolphin","Koala","Zebra","Frog","Eagle","Squirrel","Crocodile","Bee","Tiger","Bat","Camel","Seahorse","Porcupine","Meerkat","Platypus","Raccoon","Dragonfly","Jellyfish"]},
  {id:"food", em:"🍕", name:"Food & Drink", desc:"Dishes, snacks and drinks from everywhere. Warning: causes hunger.", ac:"#A44A40", diff:"Easy", words:["Pizza","Sushi","Taco","Pancakes","Spaghetti","Avocado Toast","Cheeseburger","Ice Cream Sundae","Popcorn","Croissant","Ramen","Guacamole","Chocolate Cake","French Fries","Smoothie","Burrito","Pretzel","Watermelon","Pancake Stack","Coffee","Bubble Tea","Hot Dog","Donut","Nachos","Curry","Dumplings","Waffles","Milkshake","Pickle","Marshmallow","Lemonade","Cereal","Fried Chicken","Meatballs","Cupcake","Bacon"]},
  {id:"actions", em:"🏃", name:"Act It Out", desc:"Pure charades — no talking, just flailing. The funniest deck in the game.", ac:"#5D7E8A", diff:"Easy", hot:true, words:["Brushing Your Teeth","Riding a Roller Coaster","Fishing","Dancing Ballet","Changing a Tire","Milking a Cow","Playing Air Guitar","Swimming","Tying Your Shoes","Making a Snowball","Riding a Horse","Blowing Bubbles","Jumping Rope","Hula Hooping","Walking a Dog","Painting a Wall","Kneading Dough","Playing Tennis","Surfing","Climbing a Ladder","Taking a Selfie","Watering Plants","Skiing","Playing Drums","Cutting Hair","Flying a Kite","Rowing a Boat","Building a Sandcastle","Sharpening a Pencil","Vacuuming","Doing Yoga","Catching a Butterfly","Playing Basketball","Ironing a Shirt","Opening a Jar","Riding a Bike"]},
- {id:"movies", em:"🎬", name:"Movies & TV", desc:"Blockbusters, classics and the shows everyone binges.", ac:"#6E5A7C", diff:"Medium", words:["Titanic","The Lion King","Harry Potter","Star Wars","Spider-Man","Frozen","Jurassic Park","The Avengers","Toy Story","Shrek","Home Alone","Batman","Finding Nemo","The Wizard of Oz","Jaws","E.T.","Moana","Coco","Inside Out","Stranger Things","The Office","Friends","SpongeBob SquarePants","Squid Game","Wednesday","The Mandalorian","Game of Thrones","Avatar","Top Gun","Ghostbusters","King Kong","Godzilla","The Matrix","Back to the Future","Wicked","Barbie"]},
+ {id:"movies", em:"🎬", name:"Movies & TV", desc:"Blockbusters, classics and the shows everyone binges.", ac:"#6E5A7C", diff:"Medium", words:["Titanic","The Lion King","Harry Potter","Star Wars","Spider-Man","Frozen","Jurassic Park","The Avengers","Toy Story","Shrek","Home Alone","Batman","Finding Nemo","The Wizard of Oz","Jaws","E.T.","Moana","Coco","Inside Out","Stranger Things","The Office","Friends","SpongeBob SquarePants","Squid Game","Wednesday","The Mandalorian","Game of Thrones","Avatar (2009)","Top Gun","Ghostbusters","King Kong","Godzilla","The Matrix","Back to the Future","Wicked","Barbie"]},
  {id:"famous", em:"⭐", name:"Famous People", desc:"Icons from history, sport, music and the screen. Big clues only!", ac:"#9E5A6C", diff:"Medium", words:["Albert Einstein","Beyoncé","Michael Jordan","Taylor Swift","Shakespeare","Leonardo da Vinci","Marilyn Monroe","Elvis Presley","Serena Williams","Barack Obama","Frida Kahlo","Mozart","Cleopatra","Neil Armstrong","Muhammad Ali","Oprah Winfrey","David Beckham","Adele","Isaac Newton","Queen Elizabeth II","Tom Cruise","Simone Biles","Beethoven","Martin Luther King Jr.","Charlie Chaplin","Usain Bolt","Malala Yousafzai","Pablo Picasso","Michael Jackson","Marie Curie","Lionel Messi","Billie Eilish","Abraham Lincoln","Amelia Earhart","The Rock","Jane Austen"]},
- {id:"places", em:"🌍", name:"Around the World", desc:"Landmarks, cities and wonders — pack your (imaginary) bags.", ac:"#4F7A5E", diff:"Medium", words:["Eiffel Tower","Great Wall of China","Statue of Liberty","Big Ben","Sydney Opera House","The Pyramids","Mount Everest","Niagara Falls","The Grand Canyon","Las Vegas","Hollywood Sign","Golden Gate Bridge","The Moon","Mount Rushmore","Stonehenge","The North Pole","Sahara Desert","Amazon Rainforest","Times Square","Leaning Tower of Pisa","Colosseum","Taj Mahal","Buckingham Palace","Mount Fuji","Great Barrier Reef","Yellowstone","The White House","Loch Ness","Bermuda Triangle","Santorini","Machu Picchu","Northern Lights","Venice Canals","Mount Kilimanjaro","Stonehenge","Route 66"]},
+ {id:"places", em:"🌍", name:"Around the World", desc:"Landmarks, cities and wonders — pack your (imaginary) bags.", ac:"#4F7A5E", diff:"Medium", words:["Eiffel Tower","Great Wall of China","Statue of Liberty","Big Ben","Sydney Opera House","The Pyramids","Mount Everest","Niagara Falls","The Grand Canyon","Las Vegas","Hollywood Sign","Golden Gate Bridge","Easter Island","Mount Rushmore","Stonehenge","The North Pole","Sahara Desert","Amazon Rainforest","Times Square","Leaning Tower of Pisa","Colosseum","Taj Mahal","Buckingham Palace","Mount Fuji","Great Barrier Reef","Yellowstone","The White House","Loch Ness","Galápagos Islands","Santorini","Machu Picchu","Petra","Venice Canals","Mount Kilimanjaro","Route 66","Christ the Redeemer"]},
  {id:"sports", em:"⚽", name:"Sports & Games", desc:"Every sport, plus board games and playground classics.", ac:"#556A84", diff:"Easy", words:["Soccer","Basketball","Baseball","Golf","Boxing","Wrestling","Archery","Bowling","Skateboarding","Ice Hockey","Volleyball","Badminton","Table Tennis","Chess","Monopoly","Hide and Seek","Tag","Rock Paper Scissors","Dodgeball","Marathon","Weightlifting","Gymnastics","Fencing","Cricket","Rugby","Darts","Pool (Billiards)","Curling","Sumo Wrestling","Surfing","Rock Climbing","Karate","Scrabble","Jenga","Twister","Video Games"]},
  {id:"jobs", em:"💼", name:"Jobs & People", desc:"Who am I? Professions and everyday characters to act out.", ac:"#6B5578", diff:"Easy", words:["Firefighter","Astronaut","Chef","Doctor","Pirate","Magician","Farmer","Detective","Superhero","Teacher","Dentist","Lifeguard","Barber","Pilot","Scientist","Plumber","Gardener","Photographer","Clown","Knight","Viking","Cowboy","Librarian","Mechanic","Artist","Baker","Police Officer","Surgeon","DJ","Zookeeper","Mail Carrier","Vet","Electrician","Judge","Santa Claus","Mermaid"]},
  {id:"objects", em:"🏠", name:"Everyday Objects", desc:"Stuff around the house — sounds easy, gets surprisingly hard.", ac:"#AC6A3C", diff:"Easy", words:["Toothbrush","Umbrella","Scissors","Toaster","Mirror","Pillow","Bicycle","Sunglasses","Backpack","Clock","Candle","Broom","Television","Refrigerator","Washing Machine","Microwave","Hair Dryer","Keys","Glasses","Sofa","Ladder","Hammer","Paintbrush","Bucket","Towel","Stairs","Doorbell","Light Bulb","Battery","Ruler","Envelope","Soap","Sponge","Curtain","Flashlight","Glue Stick"]},
  {id:"music", em:"🎵", name:"Music", desc:"Instruments, genres and all things musical. Humming allowed!", ac:"#9C4A55", diff:"Medium", words:["Guitar","Piano","Drums","Violin","Trumpet","Flute","Saxophone","Microphone","Headphones","Concert","Opera","Jazz","Hip Hop","Rock and Roll","Country Music","Karaoke","DJ","Choir","Banjo","Harmonica","Cello","Trombone","Accordion","Tambourine","Record Player","Spotify","Music Video","Band","Orchestra","Lullaby","Rap Battle","Air Guitar Solo","Encore","Backstage","Vinyl Record","Ukulele"]},
- {id:"science", em:"🔬", name:"Science & Nature", desc:"Space, weather, the body and backyard nature.", ac:"#4E6F68", diff:"Hard", hot:true, words:["Volcano","Tornado","Rainbow","Gravity","Black Hole","Dinosaur","Fossil","Telescope","Solar System","Photosynthesis","Earthquake","Lightning","Snowflake","Magnet","Skeleton","Heartbeat","Brain","DNA","Vaccine","Robot","Rocket Ship","Astronaut Helmet","Moon Landing","Eclipse","Tide","Desert","Glacier","Coral Reef","Beehive","Spider Web","Caterpillar","Seed","Thunderstorm","Comet","Saturn's Rings","Microscope"]},
- {id:"hard", em:"🧠", name:"Brain Melters", desc:"Abstract ideas and tricky phrases. For groups who've beaten everything else.", ac:"#3C414C", diff:"Hard", hot:true, words:["Déjà Vu","Time Travel","Invisible","Gravity-Free","Monday Morning","Brain Freeze","Plot Twist","Group Chat","Wi-Fi Password","Spoiler Alert","Cliffhanger","Déjà Vu All Over Again","Food Coma","Netflix Binge","FOMO","Plot Armor","Main Character Energy","Inside Joke","Awkward Silence","Small Talk","Dream Job","Bucket List","New Year's Resolution","April Fools","Plot Twist Ending","Déjà Vu"," deja vu","Mic Drop","Standing Ovation","Encore Performance","Victory Lap","Photo Finish","Underdog Story","Comeback","Tiebreaker","Sudden Death"]},
- {id:"godzilla", em:"🦖", name:"Kaiju & Giant Monsters", desc:"Godzilla, Ghidorah, Mothra and every giant monster — Rafan's titan deck. Roars encouraged.", ac:"#5D7A4E", diff:"Medium", hot:true, words:["Godzilla","King Ghidorah","Mothra","Rodan","Mechagodzilla","Destoroyah","Biollante","Shin Godzilla","Godzilla Minus One","King Kong","Gamera","Anguirus","Gigan","Hedorah","SpaceGodzilla","MUTO","Jet Jaguar","Megalon","Battra","Megaguirus","Baragon","Titanosaurus","Minilla","Burning Godzilla","Kiryu","Monster Zero","Atomic Breath","Hollow Earth","Skull Island","Monarch","Godzilla vs. Kong","Godzilla x Kong","Kaiju","King of the Monsters","Tokyo","Mothra's Song","Oxygen Destroyer","Gojira"]},
+ {id:"science", em:"🔬", name:"Science & Nature", desc:"Space, weather, the body and backyard nature.", ac:"#4E6F68", diff:"Medium", hot:true, words:["Volcano","Tornado","Rainbow","Gravity","Black Hole","Dinosaur","Fossil","Telescope","Solar System","Photosynthesis","Earthquake","Lightning","Snowflake","Magnet","Skeleton","Heartbeat","Brain","DNA","Vaccine","Robot","Rocket Ship","Astronaut Helmet","Moon Landing","Eclipse","Tide","Desert","Glacier","Coral Reef","Beehive","Spider Web","Caterpillar","Seed","Thunderstorm","Comet","Saturn's Rings","Microscope"]},
+ {id:"hard", em:"🧠", name:"Brain Melters", desc:"Abstract ideas and tricky phrases. For groups who've beaten everything else.", ac:"#3C414C", diff:"Hard", hot:true, words:["Déjà Vu","Time Travel","Invisible","Gravity-Free","Monday Morning","Brain Freeze","Plot Twist","Group Chat","Wi-Fi Password","Spoiler Alert","Cliffhanger","Déjà Vu All Over Again","Food Coma","Netflix Binge","FOMO","Plot Armor","Main Character Energy","Inside Joke","Awkward Silence","Small Talk","Dream Job","Bucket List","New Year's Resolution","April Fools","Plot Twist Ending","Mandela Effect","Mic Drop","Standing Ovation","Encore Performance","Victory Lap","Photo Finish","Underdog Story","Comeback","Tiebreaker","Sudden Death","Fourth Wall"]},
+ {id:"godzilla", em:"🦖", name:"Kaiju & Giant Monsters", desc:"Godzilla, Ghidorah, Mothra and every giant monster — Rafan's titan deck. Roars encouraged.", ac:"#5D7A4E", diff:"Medium", hot:true, words:["Godzilla","King Ghidorah","Mothra","Rodan","Mechagodzilla","Destoroyah","Biollante","Shin Godzilla","Godzilla Minus One","King Kong","Gamera","Anguirus","Gigan","Hedorah","SpaceGodzilla","MUTO","Jet Jaguar","Megalon","Battra","Megaguirus","Baragon","Titanosaurus","Minilla","Burning Godzilla","Orga","Ebirah","Atomic Breath","Hollow Earth","Skull Island","Manda","Godzilla vs. Kong","Godzilla x Kong","Kaiju","King of the Monsters","Gabara","Mothra's Song","Oxygen Destroyer","Varan"]},
  {id:"horror", em:"👻", name:"Horror Legends", desc:"Sinister, Ringu, Noroi, Gonjiam, Satan's Slaves and the scariest icons ever — not for the faint-hearted.", ac:"#4C3330", diff:"Hard", hot:true, words:["Sinister","Ringu","Noroi: The Curse","Gonjiam: Haunted Asylum","Satan's Slaves","Satan's Slaves 2: Communion","The Exorcist","Hereditary","Bughuul","Sadako","Pennywise","Freddy Krueger","Jason Voorhees","Michael Myers","Ghostface","The Babadook","Ju-On: The Grudge","Kayako","A Nightmare on Elm Street","Friday the 13th","Halloween (1978)","Midsommar","Get Out","A Quiet Place","The Witch","Insidious","Pazuzu","Regan MacNeil","Ouija Board","Found Footage","Possession","Exorcism","Pett Kata Shaw","Moshari","Incantation","The Medium","Shutter (2004)","Tumbbad"]},
  {id:"anime", em:"🌸", name:"Anime & Animation", desc:"Dragon Ball, Naruto, One Piece, Attack on Titan, Vinland Saga and more — power up and guess.", ac:"#A4717E", diff:"Medium", hot:true, words:["Goku","Vegeta","Gohan","Dragon Ball Z","Naruto Uzumaki","Sasuke Uchiha","Kakashi Hatake","Monkey D. Luffy","Roronoa Zoro","Nami","One Piece","Eren Yeager","Mikasa Ackerman","Levi Ackerman","Attack on Titan","Thorfinn","Askeladd","Vinland Saga","Tanjiro Kamado","Nezuko Kamado","Demon Slayer","Yuji Itadori","Satoru Gojo","Jujutsu Kaisen","Izuku Midoriya (Deku)","Katsuki Bakugo","My Hero Academia","Light Yagami","L Lawliet","Death Note","Totoro","Spirited Away","Pikachu","Pokémon","Edward Elric","Fullmetal Alchemist","Spike Spiegel","Sailor Moon"]},
- {id:"heroes", em:"🦸", name:"Superheroes & Villains", desc:"Batman, Spider-Man, Clayface, Joker and the whole hero-vs-villain roster. Cape optional.", ac:"#50678A", diff:"Easy", words:["Batman","Spider-Man","Clayface","Joker","Superman","Wonder Woman","Iron Man","Captain America","Thor","Hulk","Black Panther","Wolverine","Deadpool","Thanos","Loki","Harley Quinn","Catwoman","Penguin","Riddler","Two-Face","Bane","Venom","Green Goblin","Doctor Octopus","Magneto","Professor X","Flash","Aquaman","Green Lantern","Black Widow","Hawkeye","Doctor Strange","Scarlet Witch","Ant-Man","Shazam","Robin","Batgirl","Lex Luthor"]},
+ {id:"heroes", em:"🦸", name:"Superheroes & Villains", desc:"Batman, Spider-Man, Clayface, Joker and the whole hero-vs-villain roster. Cape optional.", ac:"#50678A", diff:"Easy", words:["Batman","Spider-Man","Clayface","Joker","Superman","Wonder Woman","Iron Man","Captain America","Thor","Hulk","Black Panther","Wolverine","Deadpool","Thanos","Loki","Harley Quinn","Catwoman","The Penguin","Riddler","Two-Face","Bane","Venom","Green Goblin","Doctor Octopus","Magneto","Professor X","Flash","Aquaman","Green Lantern","Black Widow","Hawkeye","Doctor Strange","Scarlet Witch","Ant-Man","Shazam","Robin","Batgirl","Lex Luthor"]},
  {id:"fantasy", em:"🐉", name:"Fantasy Books & Worlds", desc:"Mistborn, Stormlight, Harry Potter, Lord of the Rings — Vin, Kelsier, Kaladin, Shallan, Dalinar and beyond.", ac:"#8A6844", diff:"Hard", words:["Vin","Kelsier","Sazed","Kaladin Stormblessed","Shallan Davar","Dalinar Kholin","Jasnah Kholin","Mistborn","Stormlight Archive","Allomancy","Surgebinding","Harry Potter","Hermione Granger","Ron Weasley","Dumbledore","Hogwarts","Frodo Baggins","Gandalf","Aragorn","Legolas","Lord of the Rings","The Hobbit","Middle-earth","Aslan","Chronicles of Narnia","Percy Jackson","Brandon Sanderson","The Cosmere","Wax and Wayne","Spren","Shardblade","Eragon","Kvothe","The Name of the Wind","Earthsea","Lyra Belacqua","His Dark Materials","The Wheel of Time"]},
  {id:"bangladesh", em:"🇧🇩", name:"Bangladesh & Desi Culture", desc:"Dhaka, biryani, rickshaw, Eid, cricket, fuchka and home — the deck that feels like Bangladesh.", ac:"#4F7663", diff:"Medium", words:["Dhaka","Biryani","Rickshaw","Eid","Cricket","Chattogram","Cox's Bazar","Sylhet","Pohela Boishakh","Hilsa Fish","Fuchka","Jhalmuri","Bengali Language","Lungi","Sari","Panjabi","Shakib Al Hasan","Bangladesh Cricket Team","Sundarbans","Royal Bengal Tiger","Padma River","Jamuna River","Monsoon Rain","Rickshaw Art","Rabindranath Tagore","Kazi Nazrul Islam","Liberation War 1971","Ekushey February","Ahsan Manzil","Lalbagh Fort","Sylhet Tea Garden","Mishti Doi","Roshogolla","Dhaka Traffic Jam","Adda","Nakshi Kantha","Jamdani Saree","Biye (Wedding)"]},
  {id:"engineering", em:"⚙️", name:"Engineering & Campus Life", desc:"Thermodynamics, fluid mechanics, UTA, exams, blueprints and all-nighter campus chaos.", ac:"#5C6572", diff:"Hard", words:["Thermodynamics","Fluid Mechanics","Calculator","Blueprint","UT Arlington","Midterm Exam","Final Exam","Heat Transfer","Statics","Dynamics","Free Body Diagram","Bernoulli's Equation","Entropy","Enthalpy","Reynolds Number","Control Volume","Torque","Stress and Strain","Young's Modulus","CAD Drawing","3D Printing","Lab Report","Homework","All-Nighter","Lecture Hall","Campus Library","Group Project","Office Hours","GPA","Textbook","Whiteboard","Mechanical Engineering","Engineering Building","Coffee","Syllabus","Equation Sheet","Closed-Book Exam","Graduation Cap"]}
@@ -445,11 +473,22 @@ var S = {
   seconds:60, tiltMode:"classic", sound:true, vibrate:true, tiltOn:true,
   deck:null, pool:[], idx:0, correct:[], passed:[], streak:0, best:0,
   timeLeft:0, timer:null, playing:false, locked:false, paused:false, teams:false,
-  tiltArmed:true, baseBeta:null, orientHandler:null, customDeck:null
+  tiltArmed:true, baseBeta:null, orientHandler:null, customDeck:null, roundSeq:0, pendingWord:false, counting:false, countIv:null
 };
 function $(id){return document.getElementById(id);}
 function toast(msg){var t=$("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove("show");},2600);}
 function vib(p){if(S.vibrate&&navigator.vibrate){try{navigator.vibrate(p);}catch(e){}}}
+
+/* ================= SETTINGS (persisted) ================= */
+function saveSettings(){try{localStorage.setItem("gca_settings",JSON.stringify({seconds:S.seconds,tiltMode:S.tiltMode,sound:S.sound,vibrate:S.vibrate,tiltOn:S.tiltOn,teams:S.teams}));}catch(e){}}
+(function(){try{var st=JSON.parse(localStorage.getItem("gca_settings")||"null");if(st){
+  if([30,60,90,120].indexOf(st.seconds)>-1)S.seconds=st.seconds;
+  if(st.tiltMode==="classic"||st.tiltMode==="flipped")S.tiltMode=st.tiltMode;
+  if(typeof st.sound==="boolean")S.sound=st.sound;
+  if(typeof st.vibrate==="boolean")S.vibrate=st.vibrate;
+  if(typeof st.tiltOn==="boolean")S.tiltOn=st.tiltOn;
+  if(typeof st.teams==="boolean")S.teams=st.teams;
+}}catch(e){}})();
 
 /* ================= AUDIO (WebAudio, no files) ================= */
 var AC=null;
@@ -472,52 +511,81 @@ var snd={
 
 /* ================= SCREENS ================= */
 function show(id){
+  if(window.__cuIv){clearInterval(window.__cuIv);window.__cuIv=null;}
   ["screen-home","screen-ready","screen-count","screen-game","screen-results"].forEach(function(s){$(s).classList.remove("active");});
   $(id).classList.add("active");
   window.scrollTo(0,0);
+  if(id==="screen-home"&&typeof updateMatchBar==="function")updateMatchBar();
 }
 
 /* ================= HOME GRID ================= */
 function renderGrid(filter){
   var g=$("catGrid"); g.innerHTML="";
   var q=(filter||"").trim().toLowerCase();
-  var list=CATS.filter(function(c){return !q||c.name.toLowerCase().indexOf(q)>-1||c.desc.toLowerCase().indexOf(q)>-1;});
+  var list=CATS.filter(function(c){return !q||c.name.toLowerCase().indexOf(q)>-1||c.desc.toLowerCase().indexOf(q)>-1||c.words.some(function(w){return w.toLowerCase().indexOf(q)>-1;});});
   if(S.customDeck && (!q||S.customDeck.name.toLowerCase().indexOf(q)>-1)){
     list=list.concat([S.customDeck]);
   }
-  if(!q){
+  if(!q||"mixed bag all decks".indexOf(q)>-1){
     var mix=document.createElement("button"); mix.className="cat mixcard";
-    var total=CATS.reduce(function(a,c){return a+c.words.length;},0);
-    mix.innerHTML='<div class="em">🎲</div><h3>Mixed Bag — All Decks</h3><p>Every word from every deck shuffled together. The ultimate party mode.</p><div class="meta"><span class="tag hot">MOST PLAYED</span><span class="tag">'+total+' words</span><span class="tag">All levels</span></div>';
+    var total=allWords().length;
+    mix.innerHTML='<div class="em">🎲</div><h3>Mixed Bag — All Decks</h3><p>Every word from every deck shuffled together. The ultimate party mode.</p><div class="meta"><span class="tag hot">MOST PLAYED</span><span class="tag">'+total+' words</span><span class="tag">All levels</span>'+(BEST["mix"]?'<span class="tag">★ Best '+BEST["mix"]+'</span>':'')+'</div>';
     mix.onclick=function(){startSetup({id:"mix",name:"Mixed Bag — All Decks",em:"🎲",words:allWords()});};
     g.appendChild(mix);
   }
-  if(!list.length){g.innerHTML='<div class="empty">No decks match “'+filter+'”. Try “animals”, “food” or “movies”.</div>';return;}
+  if(!list.length){g.innerHTML='<div class="empty">No decks match “'+escapeHtml(filter||"")+'”. Try “animals”, “food” or “movies”.</div>';return;}
   list.forEach(function(c){
     var b=document.createElement("button"); b.className="cat"; b.style.setProperty("--ac",c.ac||"#EA580C");
-    b.innerHTML='<div class="em">'+c.em+'</div><h3>'+c.name+'</h3><p>'+c.desc+'</p><div class="meta">'+(c.hot?'<span class="tag hot">🔥 Popular</span>':'')+'<span class="tag">'+c.words.length+' words</span><span class="tag">'+(c.diff||"Mixed")+'</span>'+(BEST[c.id]?'<span class="tag">\u2605 Best '+BEST[c.id]+'</span>':'')+'</div>';
+    b.innerHTML='<div class="em">'+c.em+'</div><h3>'+escapeHtml(c.name)+'</h3><p>'+escapeHtml(c.desc)+'</p><div class="meta">'+(c.hot?'<span class="tag hot">🔥 Popular</span>':'')+'<span class="tag">'+c.words.length+' words</span><span class="tag">'+(c.diff||"Mixed")+'</span>'+(BEST[c.id]?'<span class="tag">\u2605 Best '+BEST[c.id]+'</span>':'')+'</div>';
     b.onclick=function(){startSetup(c);};
     g.appendChild(b);
   });
   var total2=CATS.reduce(function(a,c){return a+c.words.length;},0)+(S.customDeck?S.customDeck.words.length:0);
   $("totalWords").textContent=total2;
 }
-function allWords(){var a=[];CATS.forEach(function(c){a=a.concat(c.words);});if(S.customDeck)a=a.concat(S.customDeck.words);return a;}
+function allWords(){var seen={},a=[];function push(w){var k=w.trim().toLowerCase();if(!seen[k]){seen[k]=1;a.push(w);}}
+  CATS.forEach(function(c){c.words.forEach(push);});if(S.customDeck)S.customDeck.words.forEach(push);return a;}
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
 
 /* ================= TEAM MATCH ================= */
+function saneMatch(m){
+  if(!m||typeof m!=="object"||Array.isArray(m))return null;
+  function pair(a){if(!Array.isArray(a)||a.length!==2)return null;var x=Number(a[0]),y=Number(a[1]);if(!isFinite(x)||!isFinite(y)||x<0||y<0)return null;return [Math.floor(x),Math.floor(y)];}
+  var pl=pair(m.played),tt=pair(m.totals); if(!pl||!tt)return null;
+  return {turn:(m.turn===1)?1:0,played:pl,totals:tt,over:m.over===true};
+}
 var MATCH=null;
-try{MATCH=JSON.parse(localStorage.getItem("gca_match")||"null");}catch(e){MATCH=null;}
-if(!MATCH||!MATCH.totals)MATCH={turn:0,played:[0,0],totals:[0,0],over:false};
+try{MATCH=saneMatch(JSON.parse(localStorage.getItem("gca_match")||"null"));}catch(e){MATCH=null;}
+if(!MATCH)MATCH={turn:0,played:[0,0],totals:[0,0],over:false};
 function saveMatch(){try{localStorage.setItem("gca_match",JSON.stringify(MATCH));}catch(e){}}
 function teamName(i){return i===0?"Team One":"Team Two";}
 function resetMatch(){MATCH={turn:0,played:[0,0],totals:[0,0],over:false};saveMatch();}
 function bonusFlash(){var b=$("gBonus");if(!b)return;b.classList.remove("show");void b.offsetWidth;b.classList.add("show");}
 
+window.__gcaState=function(){return {on:S.tiltOn,mode:S.tiltMode,playing:S.playing,paused:S.paused};};
+window.__gcaBack=function(){
+  if(S.counting){cancelCountdown();show("screen-ready");return true;}
+  if(S.playing){pauseGame(!S.paused);return true;}
+  if($("screen-home").classList.contains("active"))return false;
+  show("screen-home");return true;
+};
+function updateMatchBar(){var bar=$("matchBar");if(!bar)return;if(!S.teams){bar.style.display="none";return;}bar.style.display="";
+  $("matchBarTxt").textContent=MATCH.over?("🏆 Last match: "+teamName(MATCH.totals[0]>MATCH.totals[1]?0:1)+" won "+Math.max(MATCH.totals[0],MATCH.totals[1])+" — "+Math.min(MATCH.totals[0],MATCH.totals[1])):("🏆 Match live — Team One "+MATCH.totals[0]+" · Team Two "+MATCH.totals[1]+" · "+teamName(MATCH.turn)+" to play");}
+function syncHowTilt(){var a=$("howTiltDown"),b=$("howTiltUp");if(!a||!b)return;
+  if(S.tiltMode==="classic"){a.innerHTML="<b>Tilt down</b> = Got it";b.innerHTML="<b>Tilt up</b> = Pass";}
+  else{a.innerHTML="<b>Tilt up</b> = Got it";b.innerHTML="<b>Tilt down</b> = Pass";}}
+function applySettingsUI(){
+  $("optSound").checked=S.sound; $("optVibrate").checked=S.vibrate; $("optTilt").checked=S.tiltOn; $("optTeams").checked=S.teams;
+  $("tiltStatus").textContent=S.tiltOn?"On — will listen during rounds":"Off — buttons only";
+  $("timeChips").querySelectorAll(".chip").forEach(function(c){var on=parseInt(c.dataset.t,10)===S.seconds;c.classList.toggle("sel",on);c.setAttribute("aria-pressed",on?"true":"false");});
+  $("tiltChips").querySelectorAll(".chip").forEach(function(c){var on=c.dataset.m===S.tiltMode;c.classList.toggle("sel",on);c.setAttribute("aria-pressed",on?"true":"false");});
+}
+
 /* ================= SETUP ================= */
 function tiltText(){return S.tiltMode==="classic" ? "Tilt DOWN = correct ✓ · Tilt UP = pass ✕ (or use the buttons)" : "Tilt UP = correct ✓ · Tilt DOWN = pass ✕ (or use the buttons)";}
 function startSetup(deck){
   S.deck=deck;
+  if(S.teams&&MATCH.over){resetMatch();toast("🏆 New match — Team One starts!");}
   $("readyDeck").textContent=(S.teams&&!MATCH.over?("👥 "+teamName(MATCH.turn)+"\u2019s turn  ·  "):"")+deck.em+"  "+deck.name+"  ·  "+deck.words.length+" words  ·  "+S.seconds+" seconds";
   $("readyTiltText").textContent=tiltText();
   show("screen-ready");
@@ -525,23 +593,28 @@ function startSetup(deck){
 
 /* ================= GAME ================= */
 function startCountdown(){
+  if(S.counting||S.playing)return;
+  S.counting=true;
   show("screen-count");
   var n=3; $("countNum").textContent=n; $("countWord").textContent="Get ready…"; snd.count();
-  var iv=setInterval(function(){
+  S.countIv=setInterval(function(){
     n--;
     if(n>0){$("countNum").textContent=n;$("countWord").textContent=["","Almost…","Ready…","Get ready…"][n]||"Get ready…";snd.count();}
-    else if(n===0){$("countNum").textContent="GO!";$("countWord").textContent="Guess!";snd.go();vib(60);}
-    else{clearInterval(iv);beginRound();}
+    else{clearInterval(S.countIv);S.countIv=null;S.counting=false;snd.go();vib(60);beginRound();goFlash();}
   },850);
 }
+function cancelCountdown(){if(S.countIv)clearInterval(S.countIv);S.countIv=null;S.counting=false;}
+function goFlash(){var f=$("flash");f.className="";void f.offsetWidth;f.classList.add("show","ok");$("flashTxt").textContent="GO! 🚀";setTimeout(function(){f.classList.remove("show");},550);}
 function beginRound(){
+  if(S.playing)return;
   S.pool=shuffle(S.deck.words); S.idx=0; S.correct=[]; S.passed=[]; S.streak=0; S.best=0;
   S.timeLeft=S.seconds; S.playing=true; S.paused=false; S.locked=false; S.tiltArmed=true; S.baseBeta=null;
+  S.roundSeq++; S.pendingWord=false;
   document.body.style.overflow="hidden";
   $("screen-game").style.setProperty("--deckac",(S.deck&&S.deck.ac)||"#7C3AED");
   show("screen-game");
   $("gCat").textContent=S.deck.em+" "+S.deck.name;
-  $("gHint").textContent=tiltText();
+  $("gHint").textContent=tiltText()+" · Tap the word = Got It ✓";
   $("correctHint").textContent=S.tiltMode==="classic"?"tilt down":"tilt up";
   $("passHint").textContent=S.tiltMode==="classic"?"tilt up":"tilt down";
   updateHUD(); showWord(true);
@@ -550,14 +623,17 @@ function beginRound(){
   S.timer=setInterval(function(){
     if(S.paused)return;
     S.timeLeft=Math.max(0,S.timeLeft-0.25);
-    if(Math.ceil(S.timeLeft)!==lastWhole){lastWhole=Math.ceil(S.timeLeft);if(lastWhole<=5&&lastWhole>0)snd.tick();}
-    updateHUD();
-    if(S.timeLeft<=0)endRound();
+    if(Math.ceil(S.timeLeft)!==lastWhole){lastWhole=Math.ceil(S.timeLeft);if(lastWhole<=5&&lastWhole>0)snd.tick();updateHUD();}
+    if(S.timeLeft<=0)endRound(true);
   },250);
   attachTilt();
 }
 function currentWord(){
-  if(S.idx>=S.pool.length){S.pool=S.pool.concat(shuffle(S.correct.concat(S.passed).length?S.deck.words:S.deck.words));}
+  if(S.idx>=S.pool.length){
+    var last=S.pool[S.pool.length-1], add=shuffle(S.deck.words);
+    if(add.length>1&&add[0]===last){var tmp=add[0];add[0]=add[1];add[1]=tmp;}
+    S.pool=S.pool.concat(add);
+  }
   return S.pool[S.idx];
 }
 function showWord(first){
@@ -568,7 +644,7 @@ function updateHUD(){
   $("gCorrect").textContent=S.correct.length; $("gPass").textContent=S.passed.length;
   var t=Math.ceil(S.timeLeft); $("gTime").textContent=t;
   $("gTime").classList.toggle("low",t<=10);
-  var f=$("tFill"); f.style.width=(S.seconds? (S.timeLeft/S.seconds*100):0)+"%"; f.classList.toggle("low",t<=10);
+  var f=$("tFill"); f.style.width=Math.min(100,(S.seconds? (S.timeLeft/S.seconds*100):0))+"%"; f.classList.toggle("low",t<=10);
   $("gStreak").textContent=S.streak>=3?("🔥 ×"+S.streak+" streak"):"";
 }
 function flash(ok){
@@ -579,52 +655,71 @@ function flash(ok){
 }
 function burst(n){
   var box=$("confetti"); if(!box)return;
-  var colors=["#E3B959","#F5EFE3","#C4943A","#9DB89A","#D8CDB4"];
-  for(var i=0;i<n;i++){
-    var el=document.createElement("span"); el.className="cf";
-    el.style.background=colors[i%colors.length];
-    el.style.left=(50+(Math.random()*40-20))+"%"; el.style.top="40%";
-    box.appendChild(el);
-    var ang=Math.random()*Math.PI*2, dist=150+Math.random()*280;
-    var dx=Math.cos(ang)*dist, dy=Math.sin(ang)*dist-110;
-    var anim=el.animate([
-      {transform:"translate(0,0) rotate(0deg)",opacity:1},
-      {transform:"translate("+dx+"px,"+(dy+330)+"px) rotate("+(Math.random()*620-310)+"deg)",opacity:0}
-    ],{duration:900+Math.random()*650,easing:"cubic-bezier(.17,.67,.35,1)"});
-    (function(node,an){an.onfinish=function(){node.remove();};})(el,anim);
-  }
+  try{
+    if(box.children&&box.children.length>140)return;
+    var colors=["#E3B959","#F5EFE3","#C4943A","#9DB89A","#D8CDB4"];
+    for(var i=0;i<n;i++){
+      var el=document.createElement("span"); el.className="cf";
+      el.style.background=colors[i%colors.length];
+      el.style.left=(50+(Math.random()*40-20))+"%"; el.style.top="40%";
+      box.appendChild(el);
+      var ang=Math.random()*Math.PI*2, dist=150+Math.random()*280;
+      var dx=Math.cos(ang)*dist, dy=Math.sin(ang)*dist-110;
+      (function(node){
+        var done=false; function clean(){if(done)return;done=true;if(node.remove)node.remove();}
+        setTimeout(clean,2100);
+        try{
+          var anim=node.animate([
+            {transform:"translate(0,0) rotate(0deg)",opacity:1},
+            {transform:"translate("+dx+"px,"+(dy+330)+"px) rotate("+(Math.random()*620-310)+"deg)",opacity:0}
+          ],{duration:900+Math.random()*650,easing:"cubic-bezier(.17,.67,.35,1)"});
+          if(anim)anim.onfinish=clean;
+        }catch(e){clean();}
+      })(el);
+    }
+  }catch(e){}
 }
 function answer(ok){
   if(!S.playing||S.paused||S.locked)return;
   S.locked=true;
   var w=currentWord();
-  if(ok){S.correct.push(w);S.streak++;S.best=Math.max(S.best,S.streak);snd.correct();vib(45);if(S.streak%5===0){S.timeLeft+=3;bonusFlash();}}
+  if(ok){S.correct.push(w);S.streak++;S.best=Math.max(S.best,S.streak);snd.correct();vib(45);if(S.streak%5===0){S.timeLeft=Math.min(S.seconds,S.timeLeft+3);bonusFlash();}}
   else{S.passed.push(w);S.streak=0;snd.pass();vib([30,40,30]);}
   flash(ok); S.idx++; updateHUD();
-  setTimeout(function(){if(S.playing){showWord();}S.locked=false;},430);
+  var seq=S.roundSeq;
+  setTimeout(function(){
+    if(seq!==S.roundSeq)return;
+    if(S.paused){S.pendingWord=true;S.locked=false;return;}
+    if(S.playing){showWord();}
+    S.locked=false;
+  },430);
 }
-function endRound(){
+function endRound(natural){
   if(!S.playing)return;
-  S.playing=false; clearInterval(S.timer); detachTilt(); document.body.style.overflow=""; snd.end(); vib([120,60,200]);
+  S.playing=false; S.paused=false; $("pauseVeil").classList.remove("show");
+  clearInterval(S.timer); detachTilt(); document.body.style.overflow=""; snd.end(); vib([120,60,200]);
   /* results */
   var c=S.correct.length,p=S.passed.length,tot=c+p;
   $("resDeck").textContent=S.deck.em+" "+S.deck.name;
-  (function(){var el=$("resScore"),v=0,step=Math.max(1,Math.round(c/18));el.textContent="0";if(c===0)return;var iv=setInterval(function(){v+=step;if(v>=c){v=c;clearInterval(iv);}el.textContent=v;},34);})();
+  (function(){var el=$("resScore"),v=0,step=Math.max(1,Math.round(c/18));el.textContent="0";if(c===0)return;window.__cuIv=setInterval(function(){v+=step;if(v>=c){v=c;clearInterval(window.__cuIv);window.__cuIv=null;}el.textContent=v;},34);})();
   var matchMsg="";
   if(S.teams){
-    if(!MATCH.over){var tn=MATCH.turn;MATCH.played[tn]++;MATCH.totals[tn]+=c;
-      if(MATCH.played[0]>=2&&MATCH.played[1]>=2&&MATCH.totals[0]!==MATCH.totals[1]){MATCH.over=true;}
-      else{MATCH.turn=1-MATCH.turn;}
+    if(natural&&!MATCH.over){var tn=MATCH.turn;MATCH.played[tn]++;MATCH.totals[tn]+=c;
+      if(MATCH.played[0]>=2&&MATCH.played[1]>=2&&MATCH.played[0]===MATCH.played[1]&&MATCH.totals[0]!==MATCH.totals[1]){MATCH.over=true;}
+      else{MATCH.turn=MATCH.played[0]<=MATCH.played[1]?0:1;}
       saveMatch();}
     if(MATCH.over){var wn=MATCH.totals[0]>MATCH.totals[1]?0:1;matchMsg="🏆 "+teamName(wn)+" wins the match, "+Math.max(MATCH.totals[0],MATCH.totals[1])+" — "+Math.min(MATCH.totals[0],MATCH.totals[1])+"!";}
+    else if(!natural){matchMsg="Round ended early — it doesn't count toward the match. Score — Team One "+MATCH.totals[0]+" · Team Two "+MATCH.totals[1]+"  ·  "+teamName(MATCH.turn)+" plays next";}
     else{matchMsg="Match score — Team One "+MATCH.totals[0]+" · Team Two "+MATCH.totals[1]+"  ·  "+teamName(MATCH.turn)+" plays next";}
   }
   $("resMatch").textContent=matchMsg;
   $("btnAgain").style.display=S.teams?"none":"";
+  var rv=$("btnReview"); if(rv)rv.style.display=(!S.teams&&p>0)?"":"none";
   $("btnNextPlayer").innerHTML=MATCH.over?"🏆 Start a new match":(S.teams?"👥 Pass to "+teamName(MATCH.turn):"👥 Pass to next player");
   if(S.teams&&MATCH.over)setTimeout(function(){burst(60);},250);
   $("resVerdict").textContent = c===0?"Tough deck! Shake it off and go again 💪" : c<5?"Nice warm-up! You're getting the hang of it 🎉" : c<10?"Great round — your team was ON it 🔥" : c<15?"Superstar guessing! Absolutely flying ⭐" : "LEGENDARY. Hall-of-fame round 🏆";
-  var isNewBest=saveBest(S.deck&&S.deck.id,c); if(isNewBest&&c>0)$("resVerdict").textContent+=" \u2605 New best for this deck!";
+  var bestOk = natural && S.deck && S.deck.id!=="review" && (S.deck.id!=="custom" || S.deck.words.length>=10);
+  var isNewBest=bestOk?saveBest(S.deck&&S.deck.id,c):false; if(isNewBest&&c>0)$("resVerdict").textContent+=" \u2605 New best for this deck!";
   $("stCorrect").textContent=c; $("stPass").textContent=p;
   $("stAcc").textContent=tot?Math.round(c/tot*100)+"%":"—";
   $("stStreak").textContent=S.best;
@@ -633,11 +728,13 @@ function endRound(){
   show("screen-results");
   if(c>=5)setTimeout(function(){burst(60);},200);
 }
-var BEST={}; try{BEST=JSON.parse(localStorage.getItem("gca_best")||"{}");}catch(e){BEST={};}
-function saveBest(id,v){if(id&&(!BEST[id]||v>BEST[id])){BEST[id]=v;try{localStorage.setItem("gca_best",JSON.stringify(BEST));}catch(e){}return true;}return false;}
+var BEST={};
+try{var _b=JSON.parse(localStorage.getItem("gca_best")||"{}");if(_b&&typeof _b==="object"&&!Array.isArray(_b)){for(var _k in _b){var _v=Number(_b[_k]);if(isFinite(_v)&&_v>0)BEST[_k]=Math.floor(_v);}}}catch(e){BEST={};}
+function saveBest(id,v){if(!id||!(v>0))return false;if(BEST[id]&&v<=BEST[id])return false;BEST[id]=v;try{localStorage.setItem("gca_best",JSON.stringify(BEST));return true;}catch(e){return false;}}
 function escapeHtml(s){return s.replace(/[&<>"']/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];});}
 function pauseGame(v){
   if(!S.playing)return; S.paused=v; $("pauseVeil").classList.toggle("show",v);
+  if(!v&&S.pendingWord){S.pendingWord=false;showWord();}
 }
 
 /* ================= TILT ================= */
@@ -679,34 +776,46 @@ function requestTilt(){
 }
 
 /* ================= WIRING ================= */
-$("searchInput").addEventListener("input",function(){renderGrid(this.value);});
+var _sqT=null;$("searchInput").addEventListener("input",function(){var v=this.value;clearTimeout(_sqT);_sqT=setTimeout(function(){renderGrid(v);},120);});
 $("btnHow").onclick=function(){var p=$("howPanel");p.hidden=!p.hidden;if(!p.hidden)p.scrollIntoView({behavior:"smooth",block:"nearest"});};
 $("btnCustom").onclick=function(){var p=$("customPanel");p.hidden=!p.hidden;if(!p.hidden)p.scrollIntoView({behavior:"smooth"});};
 $("btnCancelCustom").onclick=function(){$("customPanel").hidden=true;};
+function cleanWord(w){
+  w=String(w).replace(/[\u200B-\u200D\uFEFF\u0000-\u001F\u007F]/g,"").replace(/\s+/g," ").trim();
+  return w.slice(0,60);
+}
+function wordKey(w){var k=w.toLowerCase();try{k=k.normalize("NFD").replace(/[\u0300-\u036f]/g,"");}catch(e){}return k;}
 $("btnSaveCustom").onclick=function(){
-  var name=$("customName").value.trim()||"My Custom Deck";
-  var words=$("customWords").value.split("\n").map(function(s){return s.trim();}).filter(Boolean);
-  var seen={},out=[];words.forEach(function(w){var k=w.toLowerCase();if(!seen[k]){seen[k]=1;out.push(w);}});
+  var name=$("customName").value.replace(/[\u200B-\u200D\uFEFF]/g,"").replace(/\s+/g," ").trim().slice(0,40)||"My Custom Deck";
+  var words=$("customWords").value.split(/\r\n|\r|\n/).map(cleanWord).filter(Boolean);
+  var seen={},out=[];words.forEach(function(w){var k=wordKey(w);if(!seen[k]){seen[k]=1;out.push(w);}});
   if(out.length<5){toast("Add at least 5 words (one per line) to play ✏️");return;}
   S.customDeck={id:"custom",em:"✏️",name:name,desc:"Your own words — made by you, for your group.",ac:"#AC6A3C",diff:"Custom",words:out};
+  try{localStorage.setItem("gca_custom",JSON.stringify({name:name,words:out}));}catch(e){}
   $("customPanel").hidden=true; renderGrid("");
   toast("“"+name+"” saved with "+out.length+" words 🎉");
   startSetup(S.customDeck);
 };
 $("timeChips").addEventListener("click",function(e){
   var b=e.target.closest(".chip");if(!b)return;
+  if(S.playing){toast("Finish the round first ⏱️");return;}
   this.querySelectorAll(".chip").forEach(function(c){c.classList.remove("sel");});b.classList.add("sel");
-  S.seconds=parseInt(b.dataset.t,10);
+  S.seconds=parseInt(b.dataset.t,10); saveSettings();
 });
 $("tiltChips").addEventListener("click",function(e){
   var b=e.target.closest(".chip");if(!b)return;
   this.querySelectorAll(".chip").forEach(function(c){c.classList.remove("sel");});b.classList.add("sel");
-  S.tiltMode=b.dataset.m; toast(tiltText());
+  S.tiltMode=b.dataset.m; saveSettings(); syncHowTilt(); toast(tiltText());
 });
-$("optSound").onchange=function(){S.sound=this.checked;if(this.checked)snd.correct();};
-$("optVibrate").onchange=function(){S.vibrate=this.checked;if(this.checked)vib(40);};
-$("optTeams").onchange=function(){S.teams=this.checked;if(this.checked)resetMatch();toast(this.checked?"👥 Team match on — Team One starts!":"Team match off");};
-$("optTilt").onchange=function(){S.tiltOn=this.checked;$("tiltStatus").textContent=this.checked?"On — will listen during rounds":"Off — buttons only";};
+$("optSound").onchange=function(){S.sound=this.checked;saveSettings();if(this.checked)snd.correct();};
+$("optVibrate").onchange=function(){S.vibrate=this.checked;saveSettings();if(this.checked)vib(40);};
+$("optTeams").onchange=function(){S.teams=this.checked;saveSettings();
+  if(this.checked){
+    if(MATCH.over||(MATCH.played[0]+MATCH.played[1]===0)){resetMatch();toast("👥 Team match on — Team One starts!");}
+    else toast("👥 Match resumed — "+teamName(MATCH.turn)+" to play");
+  } else toast("Team match off");
+  updateMatchBar();};
+$("optTilt").onchange=function(){S.tiltOn=this.checked;saveSettings();$("tiltStatus").textContent=this.checked?"On — will listen during rounds":"Off — buttons only";};
 $("btnTiltPerm").onclick=requestTilt;
 $("btnBackHome").onclick=function(){show("screen-home");};
 $("btnStart").onclick=function(){ac();startCountdown();};
@@ -715,33 +824,57 @@ $("btnPass").onclick=function(){answer(false);};
 $("gMid").addEventListener("click",function(e){/* tapping word area = correct, for one-handed play */answer(true);});
 $("btnPause").onclick=function(){pauseGame(true);};
 $("btnResume").onclick=function(){pauseGame(false);};
-$("btnQuit").onclick=function(){endRound();};
-$("btnEndFromPause").onclick=function(){$("pauseVeil").classList.remove("show");S.paused=false;endRound();};
-$("btnAgain").onclick=function(){startSetup(S.deck);startCountdown();};
+$("btnQuit").onclick=function(){pauseGame(true);};
+$("btnEndFromPause").onclick=function(){$("pauseVeil").classList.remove("show");S.paused=false;endRound(false);};
+$("btnAgain").onclick=function(){if(S.teams)return;startSetup(S.deck);startCountdown();};
 $("btnRandom").onclick=function(){var d=CATS[Math.floor(Math.random()*CATS.length)];startSetup(d);};
 $("btnNextPlayer").onclick=function(){if(S.teams&&MATCH.over)resetMatch();startSetup(S.deck);};
 $("btnHome2").onclick=function(){show("screen-home");};
+$("btnReview").onclick=function(){if(S.teams||!S.passed.length)return;var ac=(S.deck&&S.deck.ac)||"#C4943A";startSetup({id:"review",em:"🎯",name:"Missed Words — Replay",ac:ac,diff:"Review",words:S.passed.slice()});startCountdown();};
+$("btnNewMatch").onclick=function(){resetMatch();updateMatchBar();toast("↺ Fresh match — Team One starts!");};
+$("btnCancelCount").onclick=function(){cancelCountdown();show("screen-ready");};
 document.addEventListener("keydown",function(e){
   if(!$("screen-game").classList.contains("active"))return;
   if(e.key==="ArrowDown"){e.preventDefault();answer(S.tiltMode==="classic");}
   if(e.key==="ArrowUp"){e.preventDefault();answer(S.tiltMode!=="classic");}
   if(e.key==="Escape")pauseGame(!S.paused);
 });
-document.addEventListener("visibilitychange",function(){if(document.hidden&&S.playing&&!S.paused)pauseGame(true);});
+document.addEventListener("visibilitychange",function(){if(!document.hidden)return;if(S.counting){cancelCountdown();show("screen-ready");}else if(S.playing&&!S.paused)pauseGame(true);});
 
+try{var _cd=JSON.parse(localStorage.getItem("gca_custom")||"null");
+  if(_cd&&typeof _cd.name==="string"&&Array.isArray(_cd.words)){
+    var _cw=_cd.words.filter(function(w){return typeof w==="string";}).map(cleanWord).filter(Boolean);
+    if(_cw.length>=5)S.customDeck={id:"custom",em:"✏️",name:_cd.name.slice(0,40),desc:"Your own words — made by you, for your group.",ac:"#AC6A3C",diff:"Custom",words:_cw};
+  }}catch(e){}
+applySettingsUI();
 renderGrid("");
+syncHowTilt();
 </script>
 
 <script>
 (function(){
+  var _lastDir="",_lastAt=0;
   window.handleNativeTilt=function(dir){
+    if(dir!=="down"&&dir!=="up")return;
+    var st=window.__gcaState?window.__gcaState():null;
+    if(!st||!st.on||!st.playing||st.paused)return;
     var scr=document.getElementById('screen-game');
     if(!scr||!scr.classList.contains('active'))return;
-    var hint=document.getElementById('correctHint');
-    var downIsCorrect=!hint||hint.textContent.indexOf('down')!==-1;
-    var correct=(dir==='down')===downIsCorrect;
+    var now=Date.now();
+    if(dir===_lastDir&&now-_lastAt<350)return;
+    _lastDir=dir;_lastAt=now;
+    var correct=(dir==="down")===(st.mode==="classic");
     var btn=document.getElementById(correct?'btnCorrect':'btnPass');
     if(btn)btn.click();
+  };
+  window.__setNativeTilt=function(ok){
+    if(ok){
+      if(typeof detachTilt==="function")detachTilt();
+      var b=document.getElementById('btnTiltPerm'); if(b)b.textContent="✓ Tilt is built into this app";
+      var s=document.getElementById('tiltStatus'); if(s)s.textContent="On — handled by the app during rounds";
+    }else if(typeof window.__webAttachTilt==="function"){
+      attachTilt=window.__webAttachTilt;
+    }
   };
   /* The native accelerometer is the tilt source inside the app; disable the web
      deviceorientation listener so a tilt can never fire twice. */
